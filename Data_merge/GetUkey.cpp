@@ -17,7 +17,7 @@ bool Init_ukdb09(const std::set<std::string>& market_set, bool use_file)
 {
 	std::cout << "InitUkeyDB start use_file=" << use_file << endl;
 	int count = 0;
-	string dir_ = "/home/sds/fqy/local_file";
+	string dir_ = "/home/dac/fengqianyong/local_file";
 	if (use_file)
 	{
 		count = ukey_db.UKOpen(dir_);

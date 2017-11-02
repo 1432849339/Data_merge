@@ -1,6 +1,6 @@
 #include "cfg.h"
 
-const string base_path = "/data/UKData/Request.csv/";
+
 
 map<int, string> MarketID{
 	// 亚太地区
@@ -68,15 +68,16 @@ int64_t GetMsTime(int64_t ymd, int64_t hmsu)
 	struct tm timeinfo = { 0 };
 	time_t second;
 	int64_t  usecond;
-	timeinfo.tm_year = ymd / 10000 - 1900;
-	timeinfo.tm_mon = (ymd % 10000) / 100 - 1;
-	timeinfo.tm_mday = ymd % 100;
+	timeinfo.tm_year = static_cast<int>(ymd / 10000 - 1900);
+	timeinfo.tm_mon =  static_cast<int>((ymd % 10000) / 100 - 1);
+	timeinfo.tm_mday = static_cast<int>(ymd % 100);
 	second = mktime(&timeinfo);
 	//80000000
-	int hou = hmsu / 10000000;
-	int min = (hmsu % 10000000) / 100000;
-	int sed = (hmsu % 100000) / 1000;
-	int used = hmsu % 1000;
+	
+	int hou = static_cast<int>(hmsu / 10000000);
+	int min = static_cast<int>((hmsu % 10000000) / 100000);
+	int sed = static_cast<int>((hmsu % 100000) / 1000);
+	int used = static_cast<int>(hmsu % 1000);
 
 	usecond = second + hou * 3600 + min * 60 + sed;
 	usecond *= 1000000;
@@ -497,18 +498,19 @@ bool OrqToOrderqueue(OrderQueue& OutPut, SDS20ORDERQUEUE& InPut)
 	}
 }
 
+extern char  *content;
 bool DeCompress(const std::string& filename, vector<string>& Vec)
 {
 	BZFILE *bz = nullptr;
 	int bzerr;
 	int ret = 0;
-	const int max_len = 1024 * 1024 * 10;
-	char content[max_len];
+	int max_len = 1024 * 1024 * 10;
 	if (filename.empty())
 	{
 		cerr << filename << " not exist " << endl;
 		return false;
 	}
+	
 
 	stringstream ss;
 	bz = BZ2_bzopen(filename.c_str(), "r");
@@ -757,7 +759,7 @@ void TdbToSnapshot_include_orderque(int64_t ukey, vector<string>& Vec_Str, list<
 		}
 		else
 		{
-			int bn = 0, an = 0;	// 订单数量
+			int64_t bn = 0, an = 0;	// 订单数量
 			int64_t *ba = NULL, *aa = NULL;
 			if (BidQue.find(temp.timeus) != BidQue.end())
 			{
@@ -975,117 +977,4 @@ void MakeDictionary(vector<string>& Str_orderque, int64_t ukey, map<int64_t, Ord
 			AskQue.emplace(temp.timeus, temp);
 		}
 	}
-}
-
-template<typename T>
-bool WriteToCvs(map<int64_t, list<T>>& ukey_list_data, string& date, function<void(T*, string&)> Trans2str)
-{
-	if (ukey_list_data.empty())
-	{
-		return false;
-	}
-	for (auto &data : ukey_list_data)
-	{
-		string request_name = base_path;
-		int64_t ukey = data.begin().ukey;
-		int mk = 0, ty = 0;
-		get_variety_market_by_ukey(ukey, ty, mk);
-		if ((MarketID.find(mk) != MarketID.end()) && (VarID.find(ty) != VarID.end()))
-		{
-			map<string, string>Request_FileName
-			{
-				{ "N7chronos10OrderQueueE", "OrderQueue.csv" },
-				{ "N7chronos11TransactionE", "Transaction.csv" },
-				{ "N7chronos5OrderE", "Order.csv" },
-				{ "N7chronos8SnapshotE", "Snapshot.csv" },
-			};
-			request_name += MarketID[mk];
-			request_name += "/";
-			request_name += VarID[ty];
-			request_name += "/";
-			request_name += itostr(ukey);
-			request_name += "/";
-			request_name += date.substr(0, 4);
-			request_name += "/";
-			request_name += date;
-			request_name += "/";
-			while (!mkdir_path(request_name))
-			{
-				cout << "waitting mkdir " << request_name << endl;
-			}
-			request_name += Request_FileName[typeid(T).name()];
-			ofstream fout_csv(request_name, ios::app);
-			if (!fout_csv.is_open())
-			{
-				cerr << "create " << request_name << "  error" << endl;
-				return false;
-			}
-			string str;
-			for (auto &it : data)
-			{
-				str.clear();
-				ToStr(&it, str);
-				fout_csv << str;
-			}
-			fout_csv.close();
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-}
-
-template<typename T>
-bool SortAndWrite(map<int64_t, list<T>>& ukey_list_data, string& FileName,string& date)
-{
-	vector<T*> v_ptr;
-	map<string, string>Request_FileName
-	{
-		{ "N7chronos10OrderQueueE", "OrderQueue" },
-		{ "N7chronos11TransactionE", "Transaction" },
-		{ "N7chronos5OrderE", "Order" },
-		{ "N7chronos8SnapshotE", "Snapshot" },
-	};
-	v_ptr.reserve(20000000);
-	for (auto &it: ukey_list_data)
-	{
-		for (auto &te:it.second)
-		{
-			v_ptr.emplace_back(&it);
-		}
-	}
-	std::sort(v_ptr.begin(), v_ptr.end(), compare_quote<T>());
-
-	ofstream fout(FileName);
-	if (!fout.is_open())
-	{
-		cerr << "create " << FileName << " error" << endl;
-		return false;
-	}
-	FILEHEAD FileHead = { 0 };
-	FileHead.bytes_per_record = sizeof(T);
-	FileHead.recnum = v_ptr.size();
-	FileHead.updatetm = time(NULL);
-	if (Request_FileName[typeid(T).name()] == "OrderQueue")
-	{
-		strcpy(FileHead.maintype, ("ORQ" + date).c_str());
-	}
-	else if (Request_FileName[typeid(T).name()] == "Transaction") {
-		strcpy(FileHead.maintype, ("TRD" + date).c_str());
-	}
-	else if (Request_FileName[typeid(T).name()] == "Order") {
-		strcpy(FileHead.maintype, ("ORD" + date).c_str());
-	}
-	else if (Request_FileName[typeid(T).name()] == "Snapshot") {
-		strcpy(FileHead.maintype, ("LVT" + date).c_str());
-	}
-	fout.write((const char*)&FileHead, sizeof(FileHead));
-	for (auto &it : v_ptr)
-	{
-		fout.write((const char *)it, sizeof(T));
-	}
-	fout.close();
-	return true;
 }

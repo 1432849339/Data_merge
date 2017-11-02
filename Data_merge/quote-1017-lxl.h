@@ -223,8 +223,8 @@ inline int make_order_type(char order_kind, char function_code)
 
 inline void get_variety_market_by_ukey(int64_t ukey, int &variety, int &market)
 {
-	variety = (ukey & (0x0F << 16)) >> 16;
-	market = (ukey & (0x03FF << 20)) >> 20;
+	variety = static_cast<int>((ukey & (0x0F << 16)) >> 16);
+	market =  static_cast<int>((ukey & (0x03FF << 20)) >> 20);
 }
 
 }   // namespace hk_quote
