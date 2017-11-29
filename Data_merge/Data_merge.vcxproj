@@ -76,7 +76,9 @@
     <ClInclude Include="CreatePath.h" />
     <ClInclude Include="GetUkey.h" />
     <ClInclude Include="quote-1017-lxl.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SDS20Struct-2017.h" />
+    <ClInclude Include="Trans.hpp" />
     <ClInclude Include="ukey.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

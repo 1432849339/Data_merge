@@ -7,7 +7,7 @@ map<std::string, int> g_market_ids =
 	{ "SH",  MARKET_SHA },
 	{ "SZB", MARKET_SZB },
 	{ "SHB", MARKET_SHB },
-	{ "CF",  MARKET_CFX },
+	{ "CF",  MARKET_CFE },
 	{ "SHF", MARKET_SHF },
 	{ "CZC", MARKET_CZC },
 	{ "DCE", MARKET_DCE },
@@ -58,7 +58,7 @@ bool Init_ukdb09(const std::set<std::string>& market_set, bool use_file)
 		{
 			cout << "ukey_db market_id=" << mk << endl;
 		}
-		count = ukey_db.UKOpen(market_ids, "172.24.54.1", "ukdb", "ukdb", "ukdb09", 0);
+		count = ukey_db.UKOpen(market_ids, "172.24.54.1", "ukdbr", "ukdbr", "ukdb09", 0);
 	}
 	cout << "InitUkeyDB done use_file=" << use_file << ", count=" << count << endl;
 	return true;

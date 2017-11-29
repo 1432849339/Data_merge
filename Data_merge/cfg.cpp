@@ -1,13 +1,11 @@
 #include "cfg.h"
 
-
-
 map<int, string> MarketID{
 	// 亚太地区
 	//{ MARKET_ALL, "ALL" },
 	{ MARKET_SZA, "SZA" },
 	{ MARKET_SHA, "SHA" },
-	{ MARKET_CFX, "CFX" },
+	{ MARKET_CFE, "CFX" },
 	{ MARKET_SHF, "SHF" },
 	{ MARKET_CZC, "CZC" },
 	{ MARKET_DCE, "DCE" },
@@ -69,11 +67,11 @@ int64_t GetMsTime(int64_t ymd, int64_t hmsu)
 	time_t second;
 	int64_t  usecond;
 	timeinfo.tm_year = static_cast<int>(ymd / 10000 - 1900);
-	timeinfo.tm_mon =  static_cast<int>((ymd % 10000) / 100 - 1);
+	timeinfo.tm_mon = static_cast<int>((ymd % 10000) / 100 - 1);
 	timeinfo.tm_mday = static_cast<int>(ymd % 100);
 	second = mktime(&timeinfo);
 	//80000000
-	
+
 	int hou = static_cast<int>(hmsu / 10000000);
 	int min = static_cast<int>((hmsu % 10000000) / 100000);
 	int sed = static_cast<int>((hmsu % 100000) / 1000);
@@ -83,37 +81,6 @@ int64_t GetMsTime(int64_t ymd, int64_t hmsu)
 	usecond *= 1000000;
 	usecond += used * 1000;
 	return usecond;
-}
-
-time_t GetTr_time()
-{
-	time_t tt;
-	struct tm* pstm = nullptr;
-	tt = time(nullptr);
-	pstm = localtime(&tt);
-	if ((pstm->tm_hour == SPLIT_HROUS && pstm->tm_min > SPLIT_MINN) || (pstm->tm_hour > SPLIT_HROUS))
-	{
-		tt += 24 * 60 * 60;
-		pstm = localtime(&tt);
-	}
-	return tt;
-}
-
-int GetTrday()
-{
-	time_t tt;
-	struct tm*	pstm = nullptr;
-	tt = time(nullptr);
-	pstm = localtime(&tt);
-	if ((pstm->tm_hour == SPLIT_HROUS && pstm->tm_min > SPLIT_MINN) || (pstm->tm_hour > SPLIT_HROUS))
-	{
-		tt += 24 * 60 * 60;
-		pstm = localtime(&tt);
-	}
-	int year = pstm->tm_year + 1900;
-	int mon = pstm->tm_mon + 1;
-	int day = pstm->tm_mday;
-	return year * 10000 + mon * 100 + day;
 }
 
 void Snapshot2str(Snapshot *ptr, string &str)
@@ -510,7 +477,7 @@ bool DeCompress(const std::string& filename, vector<string>& Vec)
 		cerr << filename << " not exist " << endl;
 		return false;
 	}
-	
+
 
 	stringstream ss;
 	bz = BZ2_bzopen(filename.c_str(), "r");
@@ -550,41 +517,42 @@ bool DeCompress(const std::string& filename, vector<string>& Vec)
 	return true;
 }
 
-void TdbToSnapshot(int64_t ukey, vector<string>& Vec_Str, list<Snapshot>& L_Snap)
+void TdbToSnapshot(int64_t ukey, vector<string>& Vec_Str, list<shared_ptr<Snapshot>>& L_Snap)
 {
 	if (Vec_Str.empty())
 	{
 		return;
 	}
-	Snapshot temp = { 0 };
 	string MyNULL;
 	stringstream ss;
 	int type = 0, market = 0;
 	get_variety_market_by_ukey(ukey, type, market);
 	for (auto &it : Vec_Str)
 	{
+		shared_ptr<Snapshot> temp_shared_ptr(new Snapshot);
+		Snapshot *temp = temp_shared_ptr.get();
 		replace(it.begin(), it.end(), ' ', '%');
 		replace(it.begin(), it.end(), ',', ' ');
-		memset((void*)&temp, 0, sizeof(temp));
+		memset(temp, 0, sizeof(Snapshot));
 		ss.clear();
 		ss.str(it);
-		temp.ukey = ukey;
+		temp->ukey = ukey;
 		ss >> MyNULL;
 		ss >> MyNULL;
-		ss >> temp.trday;
-		ss >> temp.timeus;
-		temp.timeus = GetMsTime(temp.trday, temp.timeus);
-		temp.recvus = temp.timeus;
+		ss >> temp->trday;
+		ss >> temp->timeus;
+		temp->timeus = GetMsTime(temp->trday, temp->timeus);
+		temp->recvus = temp->timeus;
 		if (type == VARIETY_FUTURE || type == VARIETY_INDEX)
 		{
-			ss >> temp.last;
+			ss >> temp->last;
 		}
 		ss >> MyNULL;
 		ss >> MyNULL;
-		ss >> temp.match_num;
+		ss >> temp->match_num;
 		if (type == VARIETY_FUND || type == VARIETY_BOND || type == VARIETY_STOCK)
 		{
-			ss >> temp.info[6];
+			ss >> temp->info[6];
 		}
 		else
 		{
@@ -592,46 +560,46 @@ void TdbToSnapshot(int64_t ukey, vector<string>& Vec_Str, list<Snapshot>& L_Snap
 		}
 		ss >> MyNULL;
 		ss >> MyNULL;
-		ss >> temp.volume;
-		ss >> temp.turnover;
-		ss >> temp.high;
-		ss >> temp.low;
+		ss >> temp->volume;
+		ss >> temp->turnover;
+		ss >> temp->high;
+		ss >> temp->low;
 		if (type == VARIETY_STOCK || type == VARIETY_BOND || type == VARIETY_FUND)
 		{
-			ss >> temp.last;
+			ss >> temp->last;
 		}
-		ss >> temp.open;
-		ss >> temp.pre_close;
+		ss >> temp->open;
+		ss >> temp->pre_close;
 		if (type == VARIETY_FUTURE)
 		{
-			ss >> temp.info[2];
-			ss >> temp.info[4];
-			ss >> temp.info[6];
-			ss >> temp.info[3];
-			ss >> temp.info[5];
+			ss >> temp->info[2];
+			ss >> temp->info[4];
+			ss >> temp->info[6];
+			ss >> temp->info[3];
+			ss >> temp->info[5];
 		}
 		for (int i = 0; i < 10; ++i)
 		{
-			ss >> temp.ask_price[i];
+			ss >> temp->ask_price[i];
 		}
 		for (int i = 0; i < 10; ++i)
 		{
-			ss >> temp.ask_volume[i];
+			ss >> temp->ask_volume[i];
 		}
 		for (int i = 0; i < 10; ++i)
 		{
-			ss >> temp.bid_price[i];
+			ss >> temp->bid_price[i];
 		}
 		for (int i = 0; i < 10; ++i)
 		{
-			ss >> temp.bid_volume[i];
+			ss >> temp->bid_volume[i];
 		}
 		if (type == VARIETY_STOCK || type == VARIETY_BOND || type == VARIETY_FUND)
 		{
-			ss >> temp.info[5];
-			ss >> temp.info[4];
-			ss >> temp.info[3];
-			ss >> temp.info[2];
+			ss >> temp->info[5];
+			ss >> temp->info[4];
+			ss >> temp->info[3];
+			ss >> temp->info[2];
 		}
 		else
 		{
@@ -643,183 +611,47 @@ void TdbToSnapshot(int64_t ukey, vector<string>& Vec_Str, list<Snapshot>& L_Snap
 
 		if (type == VARIETY_INDEX)
 		{
-			ss >> temp.info[0];
-			ss >> temp.info[1];
-			ss >> temp.info[2];
-			ss >> temp.info[3];
-			ss >> temp.info[4];
+			ss >> temp->info[0];
+			ss >> temp->info[1];
+			ss >> temp->info[2];
+			ss >> temp->info[3];
+			ss >> temp->info[4];
 		}
-		L_Snap.emplace_back(temp);
+		L_Snap.emplace_back(temp_shared_ptr);
 	}
 }
 
-void TdbToSnapshot_include_orderque(int64_t ukey, vector<string>& Vec_Str, list<Snapshot>& L_Snap, map<int64_t, OrderQueue>& AskQue, map<int64_t, OrderQueue>& BidQue)
+void TdbToOrder(int64_t ukey, vector<string>& Vec_Str, list<shared_ptr<Order>>& L_Snap)
 {
 	if (Vec_Str.empty())
 	{
 		return;
 	}
-	Snapshot		temp = { 0 };
-	string			MyNULL;
-	stringstream	ss;
-	int type = 0, market = 0;
-	get_variety_market_by_ukey(ukey, type, market);
-	for (auto &it : Vec_Str)
-	{
-		replace(it.begin(), it.end(), ' ', '%');
-		replace(it.begin(), it.end(), ',', ' ');
-		memset((void*)&temp, 0, sizeof(temp));
-		ss.clear();
-		ss.str(it);
-		temp.ukey = ukey;
-		ss >> MyNULL;
-		ss >> MyNULL;
-		ss >> temp.trday;
-		ss >> temp.timeus;
-		temp.timeus = GetMsTime(temp.trday, temp.timeus);
-		temp.recvus = temp.timeus;
-		if (type == VARIETY_FUTURE || type == VARIETY_INDEX)
-		{
-			ss >> temp.last;
-		}
-		ss >> MyNULL;
-		ss >> MyNULL;
-		ss >> temp.match_num;
-		if (type == VARIETY_FUND || type == VARIETY_BOND || type == VARIETY_STOCK)
-		{
-			ss >> temp.info[6];
-		}
-		else
-		{
-			ss >> MyNULL;
-		}
-		ss >> MyNULL;
-		ss >> MyNULL;
-		ss >> temp.volume;
-		ss >> temp.turnover;
-		ss >> temp.high;
-		ss >> temp.low;
-		if (type == VARIETY_STOCK || type == VARIETY_BOND || type == VARIETY_FUND)
-		{
-			ss >> temp.last;
-		}
-		ss >> temp.open;
-		ss >> temp.pre_close;
-		if (type == VARIETY_FUTURE)
-		{
-			ss >> temp.info[2];
-			ss >> temp.info[4];
-			ss >> temp.info[6];
-			ss >> temp.info[3];
-			ss >> temp.info[5];
-		}
-		for (int i = 0; i < 10; ++i)
-		{
-			ss >> temp.ask_price[i];
-		}
-		for (int i = 0; i < 10; ++i)
-		{
-			ss >> temp.ask_volume[i];
-		}
-		for (int i = 0; i < 10; ++i)
-		{
-			ss >> temp.bid_price[i];
-		}
-		for (int i = 0; i < 10; ++i)
-		{
-			ss >> temp.bid_volume[i];
-		}
-		if (type == VARIETY_STOCK || type == VARIETY_BOND || type == VARIETY_FUND)
-		{
-			ss >> temp.info[5];
-			ss >> temp.info[4];
-			ss >> temp.info[3];
-			ss >> temp.info[2];
-		}
-		else
-		{
-			ss >> MyNULL;
-			ss >> MyNULL;
-			ss >> MyNULL;
-			ss >> MyNULL;
-		}
-
-		if (type == VARIETY_INDEX)
-		{
-			ss >> temp.info[0];
-			ss >> temp.info[1];
-			ss >> temp.info[2];
-			ss >> temp.info[3];
-			ss >> temp.info[4];
-		}
-
-		if (AskQue.empty() && BidQue.empty())
-		{
-			L_Snap.emplace_back(temp);
-		}
-		else
-		{
-			int64_t bn = 0, an = 0;	// 订单数量
-			int64_t *ba = NULL, *aa = NULL;
-			if (BidQue.find(temp.timeus) != BidQue.end())
-			{
-				auto poq = BidQue[temp.timeus];
-				bn = poq.orders_num;
-				ba = poq.queue;
-			}
-			if (AskQue.find(temp.timeus) != AskQue.end())
-			{
-				auto poq = AskQue[temp.timeus];
-				an = poq.orders_num;
-				aa = poq.queue;
-			}
-			temp.ask_orders_num = an;
-			temp.bid_orders_num = bn;
-			if (aa != NULL)
-			{
-				for (int i = 0; i < 50; ++i)
-				{
-					temp.ask_queue[i] = aa[i];
-				}
-			}
-			if (ba != NULL)
-			{
-				for (int i = 0; i < 50; ++i)
-				{
-					temp.bid_queue[i] = ba[i];
-				}
-			}
-			L_Snap.emplace_back(temp);
-		}
-	}
-}
-
-void TdbToOrder(int64_t ukey, vector<string>& Vec_Str, list<Order>& L_Snap)
-{
-	if (Vec_Str.empty())
-	{
-		return;
-	}
-	Order temp = { 0 };
 	string MyNULL;
 	stringstream ss;
 	char  order_kind, function_code;
 	for (auto &it : Vec_Str)
 	{
+		shared_ptr<Order> temp_shared_ptr(new Order);
+		Order *temp = temp_shared_ptr.get();
 		replace(it.begin(), it.end(), ' ', '%');
 		replace(it.begin(), it.end(), ',', ' ');
-		memset((void*)&temp, 0, sizeof(temp));
+		memset(temp, 0, sizeof(Order));
 		ss.clear();
 		ss.str(it);
 
-		temp.ukey = ukey;
+		temp->ukey = ukey;
 		ss >> MyNULL;
 		ss >> MyNULL;
-		ss >> temp.trday;
-		ss >> temp.timeus;
-		temp.timeus = GetMsTime(temp.trday, temp.timeus);
-		temp.recvus = temp.timeus;
-		ss >> temp.index;
+		ss >> temp->trday;
+		ss >> temp->timeus;
+		temp->timeus = GetMsTime(temp->trday, temp->timeus);
+		temp->recvus = temp->timeus;
+#ifndef COMPLETION
+		ss >> temp->index;
+#else
+		ss >> MyNULL;
+#endif // !COMPLETION
 		ss >> MyNULL;
 		ss >> order_kind;
 		if (order_kind == '%')
@@ -831,82 +663,88 @@ void TdbToOrder(int64_t ukey, vector<string>& Vec_Str, list<Order>& L_Snap)
 		{
 			function_code = '\0';
 		}
-		ss >> temp.price;
-		ss >> temp.volume;
-		temp.order_type = make_order_type(order_kind, function_code);
-		L_Snap.emplace_back(temp);
+		ss >> temp->price;
+		ss >> temp->volume;
+		temp->order_type = make_order_type(order_kind, function_code);
+		L_Snap.emplace_back(temp_shared_ptr);
 	}
 }
 
-void TdbToOrderQueue(int64_t ukey, vector<string>& Vec_Str, list<OrderQueue>& L_Snap)
+void TdbToOrderQueue(int64_t ukey, vector<string>& Vec_Str, list<shared_ptr<OrderQueue>>& L_Snap)
 {
 	if (Vec_Str.empty())
 	{
 		return;
 	}
-	OrderQueue temp = { 0 };
 	string MyNULL;
 	stringstream ss;
 	int count = 0;
 	for (auto &it : Vec_Str)
 	{
+		shared_ptr<OrderQueue> temp_shared_ptr(new OrderQueue);
+		OrderQueue *temp = temp_shared_ptr.get();
 		replace(it.begin(), it.end(), ' ', '%');
 		replace(it.begin(), it.end(), ',', ' ');
-		memset((void*)&temp, 0, sizeof(temp));
+		memset(temp, 0, sizeof(OrderQueue));
 		ss.clear();
 		ss.str(it);
 		count = 0;
-		temp.ukey = ukey;
+		temp->ukey = ukey;
 		ss >> MyNULL;
 		ss >> MyNULL;
-		ss >> temp.trday;
-		ss >> temp.timeus;
-		temp.timeus = GetMsTime(temp.trday, temp.timeus);
-		temp.recvus = temp.timeus;
-		ss >> temp.side;
-		ss >> temp.price;
-		ss >> temp.orders_num;
+		ss >> temp->trday;
+		ss >> temp->timeus;
+		temp->timeus = GetMsTime(temp->trday, temp->timeus);
+		temp->recvus = temp->timeus;
+		ss >> temp->side;
+		ss >> temp->price;
+		ss >> temp->orders_num;
 		ss >> count;
 		for (auto i = 0; i < 50; ++i)
 		{
 			if (i < count)
 			{
-				ss >> temp.queue[i];
+				ss >> temp->queue[i];
 			}
 			else
 			{
 				ss >> MyNULL;
 			}
 		}
-		L_Snap.emplace_back(temp);
+		L_Snap.emplace_back(temp_shared_ptr);
 	}
 }
 
-void TdbToTransaction(int64_t ukey, vector<string>& Vec_Str, list<Transaction>& L_Snap)
+void TdbToTransaction(int64_t ukey, vector<string>& Vec_Str, list<shared_ptr<Transaction>>& L_Snap)
 {
 	if (Vec_Str.empty())
 	{
 		return;
 	}
-	Transaction temp = { 0 };
 	string MyNULL;
 	stringstream ss;
 	char bs_flag, order_kind, function_code;
 	for (auto &it : Vec_Str)
 	{
+		shared_ptr<Transaction> temp_shared_ptr(new Transaction);
+		Transaction *temp = temp_shared_ptr.get();
 		replace(it.begin(), it.end(), ' ', '%');
 		replace(it.begin(), it.end(), ',', ' ');
-		memset((void*)&temp, 0, sizeof(temp));
+		memset(temp, 0, sizeof(Transaction));
 		ss.clear();
 		ss.str(it);
-		temp.ukey = ukey;
+		temp->ukey = ukey;
 		ss >> MyNULL;
 		ss >> MyNULL;
-		ss >> temp.trday;
-		ss >> temp.timeus;
-		temp.timeus = GetMsTime(temp.trday, temp.timeus);
-		temp.recvus = temp.timeus;
-		ss >> temp.index;
+		ss >> temp->trday;
+		ss >> temp->timeus;
+		temp->timeus = GetMsTime(temp->trday, temp->timeus);
+		temp->recvus = temp->timeus;
+#ifndef COMPLETION
+		ss >> temp->index;
+#else
+		ss >> MyNULL;
+#endif // !COMPLETION
 		ss >> function_code;
 		if ('%' == function_code)
 		{
@@ -922,59 +760,94 @@ void TdbToTransaction(int64_t ukey, vector<string>& Vec_Str, list<Transaction>& 
 		{
 			bs_flag = '\0';
 		}
-		ss >> temp.price;
-		ss >> temp.volume;
-		ss >> temp.ask_order;
-		ss >> temp.bid_order;
-		temp.trade_type = make_trade_type(bs_flag, order_kind, function_code);
+		ss >> temp->price;
+		ss >> temp->volume;
+		ss >> temp->ask_order;
+		ss >> temp->bid_order;
+		temp->trade_type = make_trade_type(bs_flag, order_kind, function_code);
 
-		L_Snap.emplace_back(temp);
+		L_Snap.emplace_back(temp_shared_ptr);
 	}
 }
 
-void MakeDictionary(vector<string>& Str_orderque, int64_t ukey, map<int64_t, OrderQueue>& AskQue, map<int64_t, OrderQueue>& BidQue)
+bool merger_sort(map<string, int64_t> FileList, int64_t EndTime, string FileName)
 {
-	OrderQueue		temp = { 0 };
-	string			MyNULL;
-	stringstream	ss;
-	AskQue.clear();
-	BidQue.clear();
-	for (auto &it : Str_orderque)
-	{
-		short int	ABtem = 0;
-		replace(it.begin(), it.end(), ' ', '%');
-		replace(it.begin(), it.end(), ',', ' ');
-		ss.clear();
-		temp.ukey = ukey;
-		ss.str(it);
-		ss >> MyNULL;				//万得代码(AG1312.SHF)
-		ss >> MyNULL;				//交易所代码(ag1312)
-		ss >> temp.trday;			//日期（自然日）格式YYMMDD
-		ss >> temp.timeus;			//订单时间(精确到毫秒HHMMSSmmm)
-		temp.timeus = GetMsTime(temp.trday, temp.timeus);
-		ss >> temp.side;			 //买卖方向('B':Bid 'A':Ask)
-		ss >> temp.price;			 //成交价格((a double number + 0.00005) *10000)
-		ss >> temp.orders_num;		 //订单数量
-		ss >> ABtem;				 //明细个数
-		for (int i = 0; i < 50; ++i)
-		{
-			if (i < ABtem)
-			{
-				ss >> temp.queue[i];	//订单明细
-			}
-			else
-			{
-				ss >> MyNULL;
-			}
-		}
-
-		if (temp.side == 'B')
-		{
-			BidQue.emplace(temp.timeus, temp);
-		}
-		else
-		{
-			AskQue.emplace(temp.timeus, temp);
-		}
+	cout << EndTime << endl;
+	if (FileList.empty()) {
+		cout << "merger_sort is seccuss!" << endl;
+		return true;
 	}
+	ifstream file;
+	vector<string>		MyErase;
+	list<Snapshot>		v_snapshot;
+	Snapshot tep = { 0 };
+	int length = 0;
+	int tep_size = sizeof(tep);
+
+	for (auto &it : FileList)
+	{
+		file.open(it.first);
+		if (!file.is_open())
+		{
+			cerr << "open " << it.first << " is error" << endl;
+			return false;
+		}
+		FILEHEAD FileHead = { 0 };
+		file.read((char*)&FileHead, sizeof(FileHead));
+		length = FileHead.recnum;
+		if (length <= it.second)
+		{
+			MyErase.push_back(it.first);
+			file.close();
+			continue;
+		}
+		file.seekg(sizeof(FileHead) + tep_size*it.second, ios_base::beg);
+		while (file)
+		{
+			memset(&tep, 0, tep_size);
+			file.read((char*)&tep, sizeof(tep));
+			if (file.gcount() != tep_size)
+				break;
+			if (tep.timeus < EndTime)
+			{
+				v_snapshot.emplace_back(tep);
+				it.second++;
+			}
+			else {
+				file.seekg(-tep_size, ios_base::cur);
+				break;
+			}
+		}
+		file.close();
+	}
+
+	for (auto it : MyErase)
+	{
+		FileList.erase(it);
+	}
+	MySort(v_snapshot, FileName);
+	v_snapshot.clear();
+	MyErase.clear();
+	merger_sort(FileList, EndTime + 3600000000, FileName);
+	return true;
+}
+
+void MySort(list<Snapshot> &v_data, string FileName)
+{
+	list<Snapshot*>v_ptr;
+	cout << v_data.size() << endl;
+	//sleep(1);
+	for (auto &it : v_data)
+	{
+		v_ptr.emplace_back(&it);
+	}
+	v_ptr.sort(compare_quote<Snapshot>());
+	ofstream fout(FileName, ios_base::app);
+	if (!fout.is_open())
+		return;
+	for (auto &it : v_ptr)
+	{
+		fout.write((const char *)it, sizeof(Snapshot));
+	}
+	fout.close();
 }

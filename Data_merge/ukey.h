@@ -22,7 +22,7 @@ namespace chronos
 		MARKET_ALL = 0,
 		MARKET_SZA,								//深圳交易所A股
 		MARKET_SHA,								//上海交易所A股
-		MARKET_CFX,								//中国金融期货交易所
+		MARKET_CFE,								//中国金融期货交易所
 		MARKET_SHF,								//上海金属期货交易所
 		MARKET_CZC,								//郑州商品交易所
 		MARKET_DCE,								//大连商品交易所
@@ -232,86 +232,15 @@ namespace chronos
 		int32_t	tick_size;								//*10000 股票0.01 商品期货最小变动价位 0.05元/克 股指期货0.2指数点 国债期货0.005元 期权0.0001元
 		int32_t	last_delivery_date;						//最后交割日
 		int32_t min_trading_margin;                     //最低交易保证金比例 7% 即7
-		//int32_t	call_put;							//callput标志 除权标志 CALL 0 PUT 1
-		//int32_t	ex_flag;							//除权标志 M 0 A 1 B2
+		int32_t	call_put;				     			//callput标志 除权标志 CALL 0 PUT 1
+		int32_t	ex_flag;			    				//除权标志 M 0 A 1 B2
 		int32_t	share_arrive;							//证券到帐日期延时, 0 : T + 0, 1 : T + 1, 2 : T + 2
 		int32_t	money_arrive;							//资金到帐日期延时, 0 : T + 0, 1 : T + 1, 2 : T + 2
 		int32_t	share_avail;							//证券可用于交易的时间, 0 : T + 0, 1 : T + 1, 2 : T + 2
 		int32_t	money_avail;							//资金可用于交易的时间, 0 : T + 0, 1 : T + 1, 2 : T + 2
-		int32_t	state;									//品种状态，与大分类有关．是否ST, PT, 正常 0; ST 2; *ST 3; **ST 4; 暂停 5; 停止 6
+		int32_t	state;									//品种状态 未知0; 正常1; ST 2; 暂停 3; 4停止,下市; 10全天停牌; 11 临时停牌
 		int32_t	board;									//板块 1主板 2中小板 3创业板 4三板 
 	};
-/*
-	//证券基本信息结构体 每天获取一次
-	struct SecurityInfo
-	{
-		int64_t	ukey;									//uk码
-		int32_t	market_id;
-		int32_t	major_type;								//大类型
-		int32_t	minor_type;								//小类型
-		int32_t	jy_code; 	 							//JY  证券代码  InnerCode int32_t聚源数据库码
-		int32_t	list_date;								//上市时间
-		int32_t	delist_date;							//退市时间
-		int32_t	currency_id;							//结算和交易货币编码,用于货币交易的,也用于品种交易的货币.
-		char	market_code[32];						//交易所标识600446 合约名称
-		char	wind_code[32];							//wind证券代码 s_info_windcode 'A14630.SZ' wind是字符类型
-		char	chinese_name[128];  					//中文名称 证券简称
-		char	english_name[128]; 						//英文名
-		char	chinese_abbr[32];						//证券简称 中文
-		char	input_code[64];						    //中文拼写 inputcode
-
-		int64_t	upper_limit;							//涨停价格 *10000
-		int64_t	lower_limit;							//跌停价铬 *10000
-		int64_t	pre_close;								//昨收盘   *10000
-		int64_t	pre_settlement;							//昨结算   *10000
-		int64_t	pre_interest;							//昨持仓
-		int64_t	pre_volume;								//上次交易总量
-		int64_t	exercise_price;							//行权价 期权行权价格 转债转股价格 *10000
-		int64_t	total_volume;							//总股本，昨总持仓合约数．
-		int64_t	float_volume;							//流通股本
-		int64_t	associate_code;							//关联编码 比如转债的关联股票 uk
-		int32_t	contract_id;							//期货/期权有对应的合约编码 对照到contract表
-		int32_t	pre_trading_day;						//上个交易日
-		int32_t	trading_day;							//交易日
-		int32_t	min_order_size;							//最小单笔成交量 单位手 黄金交易所 Au99.95 1手 股票一般是1手
-		int32_t	max_order_size;							//最大单笔成交量 单位手 黄金交易所 Au99.95 500手
-		int32_t	lot_size;								//每手股数 股票使用
-		int32_t	multiplier;								//合约乘数 股指期货每点300元 交易单位 商品期货1000克/手  期权合约乘数10000 期货期权使用
-		int32_t	tick_size;								//10000 股票0.01 商品期货最小变动价位 0.05元/克 股指期货0.2指数点 国债期货0.005元 期权0.0001元
-		int32_t	last_delivery_date;						//最后交割日
-		int32_t	call_put;								//callput标志 除权标志 CALL 0 PUT 1
-		int32_t	ex_flag;								//除权标志 M 0 A 1 B2
-		int32_t	share_arrive;							//证券到帐日期延时, 0 : T + 0, 1 : T + 1, 2 : T + 2
-		int32_t	money_arrive;							//资金到帐日期延时, 0 : T + 0, 1 : T + 1, 2 : T + 2
-		int32_t	share_avail;							//证券可用于交易的时间, 0 : T + 0, 1 : T + 1, 2 : T + 2
-		int32_t	money_avail;							//资金可用于交易的时间, 0 : T + 0, 1 : T + 1, 2 : T + 2
-		int32_t	state;									//品种状态，与大分类有关．是否ST, PT, 正常 0; ST 2; *ST 3; **ST 4; 暂停 5; 停止 6
-		int32_t	plate;									//板块 1主板 2中小板 3创业板 4三板 
-	};
-
-
-	struct Contract
-	{
-		int32_t     contract_id;										//合约编码 按上市时间
-		int32_t		list_date;      									//上市日期, 首个合同交易日期 如果觉得不是很关心 标的的上市时间可以去掉
-		int32_t		delist_date;										//下市日期, 摘牌日期, 当日还可以交易, 后期不行, 缺省是99999999
-		char		contract_code[32];									//市场编码 CU
-		char		contract_chname[128];								//标的中文名称 伦敦铜
-		char		contract_enname[128];								//标的英文名称 CU
-		char		pricen_unit[32];									//报价单位 元（人民币）/吨 报价方式
-		char		max_fluctuation_limit[256];						    //每日价格最大波动限制 不超过上一交易日结算价±3%
-		char		contract_month[256];								//合约交割月份 1～12月
-		char		trading_time[256];									//交易时间 上午9 : 00－11 : 30 ，下午1 : 30－3 : 00和交易所规定的其他交易时间
-		char		last_trading_date[64];								//最后交易日 合约交割月份的15日
-		char		delivery_date[64];									//交割日期 最后交易日后连续五个工作日 或是最后交割日描述
-		char		delivery_grade[512];								//交割品级
-		char		delivery_points[64];								//交割地点
-		char		min_trading_margin[512];							//最低交易保证金
-		char		trading_fee[64];									//交易手续费
-		char		delivery_methods[64];								//交割方式
-		char		contract_desc[1024];    							//合约描述
-	};
-*/
 
 	struct Contract
 	{
@@ -338,15 +267,7 @@ namespace chronos
 		char		contract_desc[1024];    							//合约描述
 	};
 
-	struct Component
-	{
-		int64_t component_id;                                           //1上证50 2 上证180 3沪深300 4etf成分股
-		int64_t ukey;                                                   //ukey
-		int32_t stock_amount;											//股票数量(股)
-		int32_t cash_substitute_sign;                                   //现金替代标志 1 允许 2必须 3 ...
-		double cash_substitute_proportion;                              //现金替代比例(%)
-		double fixed_substitute_money;                                  //固定替代金额(元)
-	};
+	
 
 	struct Market
 	{
@@ -358,6 +279,47 @@ namespace chronos
 		char	chinese_name[128];   									//市场中文名称
 		char	english_name[128];   									//标的英文名称
 	};
+
+	struct ETFComponent
+	{
+		int64_t component_id;                                          //ETF成分股id 等同于基金的ukey
+		char component_one_code[32];
+		char component_two_code[32];
+		char online_creation_code[32];
+		char online_cash_code[32];
+		char creation_redemption_cash_code[32];
+		double creation_redemption_unit;
+		double estimate_cash_component;
+		double max_cash_ratio;
+		int32_t publish;
+		int32_t creation;
+		int32_t redemption;
+		int32_t record_num;
+		int32_t total_record_num;
+		int32_t trading_day;                                           //交易日
+		int32_t pre_trading_day;
+		double cash_component;
+		double nav_per_cu;
+		double nav;
+		double dividend_per_cu;                                        //红利金额
+		double creation_limit;                                         //累计申购总额限制
+		double redemption_limit;                                       //累计赎回总额限制
+		double creation_limit_per_user;                                //单个账户累计申购总额限制
+		double redemption_limit_per_user;                              //单个账户累计赎回总额限制
+		double net_creation_limit;                                     //净申购总额限制
+		double net_redemption_limit;                                   //净赎回总额限制
+		double net_creation_limit_per_user;                            //单个账户净申购总额限制
+		double net_redemption_limit_per_user;                          //单个账户净赎回总额限制
+			
+		int64_t ukey;                                                  //成分股ukey
+		char market_code[32];
+		int32_t sub_stitute_flag;                                      //现金替代标志 1允许 2必须 3禁止 4退补
+		double component_share;                                        //成分证券数
+		double premium_ratio;										   //溢价比率
+		double creation_cash_substitute;                               //申购替代金额
+		double redemption_cash_substitute;                             //赎回替代金额
+	};
+/*	
 
 	struct Exrights
 	{
@@ -381,14 +343,31 @@ namespace chronos
 		double fee_by_qty;                                              //按成交量
 		double minimum_money;                                           //最低收费金额如最低5元
 	};
+*/
 
 	class SecurityMaster
 	{
 	public:
 		//以数据库的方式加载secu-marster 选择加载的市场，可以多次open前后覆盖 指定日期只得到某天 默认0 代表全部最近一天的
-		int32_t UKOpen(const std::set<int32_t>& market_set, const std::string& url, const std::string& user, const std::string& pass, const std::string& data_base, const int date = 0);
+		int32_t UKOpen(const std::set<int32_t>& market_set, const std::string& url, const std::string& user, const std::string& pass, const std::string& data_base, const int& date);
+		//先打开连接	
+		int32_t UKConnect(const std::set<int32_t>& market_set, const std::string& url, const std::string& user, const std::string& pass, const std::string& data_base);
+		//只打开Secumaster
+		int32_t OpenSecumaster(const std::set<int32_t>& market_set, const int& date);
+
+		//只打开Contract
+		int32_t OpenContract();
+		
+		//只打开Market
+		int32_t OpenMarket();
+		
+		//只打开etf表
+		int32_t OpenETFComponent(const int& date);
 
 		//以文件的方式加载secu-marster 3个.csv文件
+		int32_t UKOpen(const std::string& security_file, const std::string& contract_file, const std::string& market_file);
+		
+		//增加文件夹格式
 		int32_t UKOpen(const std::string& file_dir);
 		
 		//请求接口
@@ -565,20 +544,27 @@ namespace chronos
 		//返回市场信息 NULL为失败
 		const Market* GetMarket(const int64_t& ukey);
 
+
 		/*
-			获取 指数成分 ETF成分股
+			获取 ETF成分股
 		*/
-		//
-		std::vector<int64_t> GetComponent(const int64_t& component_id);
 		
-		//是否在某个成份股 返回0 代表有并放入第三个参数 其他没有
-		int GetComponent(const int64_t& component_id, const int64_t& key, Component& com);
-		//NULL没有该成分股
-		const Component* GetComponent(const int64_t& component_id, const int64_t& key);
+		//etf成份股
+		std::vector<ETFComponent*> GetETFComponent(const int64_t& component_id);
+		//-1代表没有 0 代表有 并在com中返回
+		int GetETFComponent(const int64_t& component_id, const int64_t& key, ETFComponent& com);
+		//NULL代表没有 
+		const ETFComponent* GetETFComponent(const int64_t& component_id, const int64_t& key);
+		/*
+		std::vector<ETFComponent*> GetAllETFComponent(const int64_t& component_id);
+		//某只成份股信息
+		const ETFComponent* GetETFComponent(const int64_t& component_id, const int64_t& key);
 
-		//返回费率
-		//const Feerate* GetFeerate(const int64_t& ukey);
-
+		//获取所有etf清单信息
+		std::vector<ETFList*> GetAllETFList();
+		//获取某只etf清单信息
+		const ETFList* GetETFList(const int64_t& component_id);
+		*/
 	};
 
 }
