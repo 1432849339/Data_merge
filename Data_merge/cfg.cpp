@@ -772,7 +772,7 @@ void TdbToTransaction(int64_t ukey, vector<string>& Vec_Str, list<shared_ptr<Tra
 
 bool merger_sort(map<string, int64_t> FileList, int64_t EndTime, string FileName)
 {
-	cout << EndTime << endl;
+	//cout << EndTime << endl;
 	if (FileList.empty()) {
 		cout << "merger_sort is seccuss!" << endl;
 		return true;
@@ -835,7 +835,7 @@ bool merger_sort(map<string, int64_t> FileList, int64_t EndTime, string FileName
 void MySort(list<Snapshot> &v_data, string FileName)
 {
 	list<Snapshot*>v_ptr;
-	cout << v_data.size() << endl;
+	//cout << v_data.size() << endl;
 	//sleep(1);
 	for (auto &it : v_data)
 	{
